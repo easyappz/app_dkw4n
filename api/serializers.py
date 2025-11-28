@@ -44,6 +44,58 @@ class MemberSerializer(serializers.ModelSerializer):
         return None
 
 
+class MemberAdminSerializer(serializers.ModelSerializer):
+    """Serializer for Member model with admin fields"""
+    balance = serializers.SerializerMethodField()
+    referred_by = serializers.SerializerMethodField()
+    total_referrals = serializers.SerializerMethodField()
+    total_earned = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Member
+        fields = [
+            'id',
+            'username',
+            'user_type',
+            'referral_code',
+            'referred_by',
+            'balance',
+            'is_admin',
+            'created_at',
+            'total_referrals',
+            'total_earned'
+        ]
+        read_only_fields = fields
+    
+    def get_balance(self, obj):
+        """Return appropriate balance based on user type"""
+        if obj.user_type == 'player':
+            return float(obj.balance_vcoins)
+        else:  # influencer
+            return float(obj.balance_rubles)
+    
+    def get_referred_by(self, obj):
+        """Get ID of the user who referred this member"""
+        relation = ReferralRelation.objects.filter(referred=obj, level=1).first()
+        if relation:
+            return relation.referrer.id
+        return None
+    
+    def get_total_referrals(self, obj):
+        """Count total referrals"""
+        return ReferralRelation.objects.filter(referrer=obj).count()
+    
+    def get_total_earned(self, obj):
+        """Calculate total earned from bonuses"""
+        bonus_transactions = Transaction.objects.filter(
+            member=obj,
+            type='bonus',
+            status='completed'
+        )
+        total = sum(t.amount for t in bonus_transactions)
+        return float(total)
+
+
 class MemberRegistrationSerializer(serializers.Serializer):
     """Serializer for user registration"""
     username = serializers.CharField(max_length=150, required=True)
@@ -299,6 +351,37 @@ class ReferralTreeNodeSerializer(serializers.Serializer):
             'created_at': instance.created_at,
             'children': []
         }
+
+
+class ManualBonusRequestSerializer(serializers.Serializer):
+    """Serializer for manual bonus assignment request"""
+    user_id = serializers.IntegerField(required=True)
+    amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=0.01, required=True)
+    reason = serializers.CharField(min_length=1, required=True)
+
+
+class ConfirmTournamentRequestSerializer(serializers.Serializer):
+    """Serializer for tournament confirmation request"""
+    user_id = serializers.IntegerField(required=True)
+    tournament_name = serializers.CharField(required=True)
+    reward_amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=0, required=True)
+
+
+class ConfirmDepositRequestSerializer(serializers.Serializer):
+    """Serializer for deposit confirmation request"""
+    transaction_id = serializers.IntegerField(required=True)
+
+
+class SystemStatsSerializer(serializers.Serializer):
+    """Serializer for system statistics"""
+    total_users = serializers.IntegerField()
+    total_players = serializers.IntegerField()
+    total_influencers = serializers.IntegerField()
+    total_transactions = serializers.IntegerField()
+    total_deposits = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_bonuses_paid = serializers.DecimalField(max_digits=15, decimal_places=2)
+    pending_deposits = serializers.IntegerField()
+    active_users_last_30_days = serializers.IntegerField()
 
 
 class MessageSerializer(serializers.Serializer):

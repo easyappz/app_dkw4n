@@ -14,7 +14,12 @@ from .views import (
     DepositView,
     BonusesListView,
     CurrentLevelView,
-    LevelsListView
+    LevelsListView,
+    AdminUsersListView,
+    AdminBonusView,
+    ConfirmTournamentView,
+    ConfirmDepositView,
+    AdminStatsView
 )
 
 urlpatterns = [
@@ -43,4 +48,11 @@ urlpatterns = [
     # Level endpoints
     path("levels/current", CurrentLevelView.as_view(), name="current-level"),
     path("levels", LevelsListView.as_view(), name="levels-list"),
+    
+    # Admin endpoints
+    path("admin/users", AdminUsersListView.as_view(), name="admin-users"),
+    path("admin/bonuses", AdminBonusView.as_view(), name="admin-bonus"),
+    path("admin/confirm-tournament", ConfirmTournamentView.as_view(), name="admin-confirm-tournament"),
+    path("admin/confirm-deposit", ConfirmDepositView.as_view(), name="admin-confirm-deposit"),
+    path("admin/stats", AdminStatsView.as_view(), name="admin-stats"),
 ]

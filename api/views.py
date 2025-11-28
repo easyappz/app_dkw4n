@@ -4,10 +4,13 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.conf import settings
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema
+from datetime import timedelta
 from .serializers import (
     MessageSerializer,
     MemberSerializer,
+    MemberAdminSerializer,
     MemberRegistrationSerializer,
     MemberLoginSerializer,
     ReferralRelationSerializer,
@@ -15,7 +18,11 @@ from .serializers import (
     ReferralTreeNodeSerializer,
     TransactionSerializer,
     BonusSerializer,
-    LevelSerializer
+    LevelSerializer,
+    ManualBonusRequestSerializer,
+    ConfirmTournamentRequestSerializer,
+    ConfirmDepositRequestSerializer,
+    SystemStatsSerializer
 )
 from .models import Member, ReferralRelation, Transaction, Level
 from .authentication import CookieAuthentication
@@ -27,6 +34,35 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+
+class AdminResultsSetPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+def check_admin_permission(request):
+    """Check if user is authenticated and is admin"""
+    if not request.user or request.user.is_anonymous:
+        return False, Response(
+            {
+                'error': 'Authentication required',
+                'detail': 'User is not authenticated'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if not request.user.is_admin:
+        return False, Response(
+            {
+                'error': 'Permission denied',
+                'detail': 'Admin access required'
+            },
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    return True, None
 
 
 class HelloView(APIView):
@@ -728,4 +764,360 @@ class LevelsListView(APIView):
         
         levels = Level.objects.all().order_by('required_referrals')
         serializer = LevelSerializer(levels, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# Admin Views
+
+class AdminUsersListView(APIView):
+    """
+    Get all users (Admin only)
+    """
+    authentication_classes = [CookieAuthentication]
+    pagination_class = AdminResultsSetPagination
+
+    @extend_schema(
+        responses={200: MemberAdminSerializer(many=True)}
+    )
+    def get(self, request):
+        is_admin, error_response = check_admin_permission(request)
+        if not is_admin:
+            return error_response
+        
+        # Get all members
+        members = Member.objects.all().order_by('-created_at')
+        
+        # Filter by user_type if provided
+        user_type = request.GET.get('user_type')
+        if user_type and user_type in ['player', 'influencer']:
+            members = members.filter(user_type=user_type)
+        
+        # Search by username if provided
+        search = request.GET.get('search')
+        if search:
+            members = members.filter(username__icontains=search)
+        
+        # Paginate results
+        paginator = self.pagination_class()
+        paginated_members = paginator.paginate_queryset(members, request)
+        
+        serializer = MemberAdminSerializer(paginated_members, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class AdminBonusView(APIView):
+    """
+    Manual bonus assignment (Admin only)
+    """
+    authentication_classes = [CookieAuthentication]
+
+    @extend_schema(
+        request=ManualBonusRequestSerializer,
+        responses={201: BonusSerializer}
+    )
+    def post(self, request):
+        is_admin, error_response = check_admin_permission(request)
+        if not is_admin:
+            return error_response
+        
+        serializer = ManualBonusRequestSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(
+                {
+                    'error': 'Validation error',
+                    'detail': serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user_id = serializer.validated_data['user_id']
+        amount = serializer.validated_data['amount']
+        reason = serializer.validated_data['reason']
+        
+        # Get user
+        try:
+            member = Member.objects.get(id=user_id)
+        except Member.DoesNotExist:
+            return Response(
+                {
+                    'error': 'Not found',
+                    'detail': f'User with id {user_id} not found'
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Determine currency based on user type
+        currency = 'vcoins' if member.user_type == 'player' else 'rubles'
+        
+        # Create bonus transaction
+        transaction = Transaction.objects.create(
+            member=member,
+            type='bonus',
+            amount=amount,
+            currency=currency,
+            status='completed',
+            description=f"Manual bonus: {reason}"
+        )
+        transaction.complete()
+        
+        bonus_serializer = BonusSerializer(transaction)
+        return Response(
+            {
+                'message': 'Bonus assigned successfully',
+                'bonus': bonus_serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+class ConfirmTournamentView(APIView):
+    """
+    Confirm tournament participation (Admin only)
+    """
+    authentication_classes = [CookieAuthentication]
+
+    @extend_schema(
+        request=ConfirmTournamentRequestSerializer,
+        responses={201: TransactionSerializer}
+    )
+    def post(self, request):
+        is_admin, error_response = check_admin_permission(request)
+        if not is_admin:
+            return error_response
+        
+        serializer = ConfirmTournamentRequestSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(
+                {
+                    'error': 'Validation error',
+                    'detail': serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user_id = serializer.validated_data['user_id']
+        tournament_name = serializer.validated_data['tournament_name']
+        reward_amount = serializer.validated_data['reward_amount']
+        
+        # Get user
+        try:
+            member = Member.objects.get(id=user_id)
+        except Member.DoesNotExist:
+            return Response(
+                {
+                    'error': 'Not found',
+                    'detail': f'User with id {user_id} not found'
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Determine currency based on user type
+        currency = 'vcoins' if member.user_type == 'player' else 'rubles'
+        
+        # Create tournament transaction
+        transaction = Transaction.objects.create(
+            member=member,
+            type='tournament',
+            amount=reward_amount,
+            currency=currency,
+            status='completed',
+            description=f"Tournament reward: {tournament_name}"
+        )
+        transaction.complete()
+        
+        # If this is the first tournament, trigger referral bonuses
+        if not member.first_tournament_played:
+            member.first_tournament_played = True
+            member.save()
+            
+            # Award bonuses to referral chain (up to 10 levels)
+            relations = ReferralRelation.objects.filter(
+                referred=member
+            ).select_related('referrer').order_by('level')
+            
+            for relation in relations:
+                if relation.level == 1:
+                    bonus_amount = relation.referrer.calculate_referral_bonus(member)
+                else:
+                    bonus_amount = relation.referrer.calculate_indirect_bonus(relation.level)
+                
+                # Create transaction for bonus
+                referrer_currency = 'vcoins' if relation.referrer.user_type == 'player' else 'rubles'
+                bonus_transaction = Transaction.objects.create(
+                    member=relation.referrer,
+                    type='bonus',
+                    amount=bonus_amount,
+                    currency=referrer_currency,
+                    status='completed',
+                    description=f"First tournament bonus from {member.username} (Level {relation.level})",
+                    related_member=member
+                )
+                bonus_transaction.complete()
+        
+        transaction_serializer = TransactionSerializer(transaction)
+        return Response(
+            {
+                'message': 'Tournament confirmed successfully',
+                'transaction': transaction_serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+class ConfirmDepositView(APIView):
+    """
+    Confirm deposit (Admin only)
+    """
+    authentication_classes = [CookieAuthentication]
+
+    @extend_schema(
+        request=ConfirmDepositRequestSerializer,
+        responses={200: TransactionSerializer}
+    )
+    def post(self, request):
+        is_admin, error_response = check_admin_permission(request)
+        if not is_admin:
+            return error_response
+        
+        serializer = ConfirmDepositRequestSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(
+                {
+                    'error': 'Validation error',
+                    'detail': serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        transaction_id = serializer.validated_data['transaction_id']
+        
+        # Get transaction
+        try:
+            transaction = Transaction.objects.get(id=transaction_id)
+        except Transaction.DoesNotExist:
+            return Response(
+                {
+                    'error': 'Not found',
+                    'detail': f'Transaction with id {transaction_id} not found'
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if transaction is a deposit and is pending
+        if transaction.type != 'deposit':
+            return Response(
+                {
+                    'error': 'Invalid operation',
+                    'detail': 'Transaction is not a deposit'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if transaction.status == 'completed':
+            return Response(
+                {
+                    'error': 'Invalid operation',
+                    'detail': 'Deposit already confirmed'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Complete the deposit transaction
+        transaction.complete()
+        
+        # If user is an influencer, award 10% to their referrer
+        member = transaction.member
+        direct_referrer_relation = ReferralRelation.objects.filter(
+            referred=member,
+            level=1
+        ).select_related('referrer').first()
+        
+        if direct_referrer_relation and direct_referrer_relation.referrer.user_type == 'influencer':
+            # Award 10% of deposit to direct referrer
+            bonus_amount = transaction.amount * Decimal('0.10')
+            
+            bonus_transaction = Transaction.objects.create(
+                member=direct_referrer_relation.referrer,
+                type='bonus',
+                amount=bonus_amount,
+                currency='rubles',
+                status='completed',
+                description=f"10% deposit bonus from {member.username}",
+                related_member=member
+            )
+            bonus_transaction.complete()
+        
+        transaction_serializer = TransactionSerializer(transaction)
+        return Response(
+            {
+                'message': 'Deposit confirmed successfully',
+                'transaction': transaction_serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class AdminStatsView(APIView):
+    """
+    Get system statistics (Admin only)
+    """
+    authentication_classes = [CookieAuthentication]
+
+    @extend_schema(
+        responses={200: SystemStatsSerializer}
+    )
+    def get(self, request):
+        is_admin, error_response = check_admin_permission(request)
+        if not is_admin:
+            return error_response
+        
+        # Count users
+        total_users = Member.objects.count()
+        total_players = Member.objects.filter(user_type='player').count()
+        total_influencers = Member.objects.filter(user_type='influencer').count()
+        
+        # Count transactions
+        total_transactions = Transaction.objects.count()
+        
+        # Calculate total deposits
+        deposit_transactions = Transaction.objects.filter(
+            type='deposit',
+            status='completed'
+        )
+        total_deposits = sum(t.amount for t in deposit_transactions)
+        
+        # Calculate total bonuses paid
+        bonus_transactions = Transaction.objects.filter(
+            type='bonus',
+            status='completed'
+        )
+        total_bonuses_paid = sum(t.amount for t in bonus_transactions)
+        
+        # Count pending deposits
+        pending_deposits = Transaction.objects.filter(
+            type='deposit',
+            status='pending'
+        ).count()
+        
+        # Count active users in last 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        active_users_last_30_days = Member.objects.filter(
+            created_at__gte=thirty_days_ago
+        ).count()
+        
+        data = {
+            'total_users': total_users,
+            'total_players': total_players,
+            'total_influencers': total_influencers,
+            'total_transactions': total_transactions,
+            'total_deposits': float(total_deposits),
+            'total_bonuses_paid': float(total_bonuses_paid),
+            'pending_deposits': pending_deposits,
+            'active_users_last_30_days': active_users_last_30_days
+        }
+        
+        serializer = SystemStatsSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
