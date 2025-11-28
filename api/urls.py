@@ -19,7 +19,8 @@ from .views import (
     AdminBonusView,
     ConfirmTournamentView,
     ConfirmDepositView,
-    AdminStatsView
+    AdminStatsView,
+    SeedTestUsersView
 )
 
 urlpatterns = [
@@ -55,4 +56,5 @@ urlpatterns = [
     path("admin/confirm-tournament", ConfirmTournamentView.as_view(), name="admin-confirm-tournament"),
     path("admin/confirm-deposit", ConfirmDepositView.as_view(), name="admin-confirm-deposit"),
     path("admin/stats", AdminStatsView.as_view(), name="admin-stats"),
+    path("admin/seed-test-users", SeedTestUsersView.as_view(), name="admin-seed-test-users"),
 ]

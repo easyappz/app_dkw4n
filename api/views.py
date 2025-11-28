@@ -1126,3 +1126,161 @@ class AdminStatsView(APIView):
         
         serializer = SystemStatsSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SeedTestUsersView(APIView):
+    """
+    Seed test users (Admin only)
+    """
+    authentication_classes = [CookieAuthentication]
+
+    @extend_schema(
+        responses={
+            201: {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'created_users': {'type': 'integer'},
+                    'tim_username': {'type': 'string'},
+                    'tim_referral_code': {'type': 'string'},
+                    'total_bonuses': {'type': 'number'},
+                    'tim_balance': {'type': 'number'}
+                }
+            }
+        }
+    )
+    def post(self, request):
+        is_admin, error_response = check_admin_permission(request)
+        if not is_admin:
+            return error_response
+        
+        # Find Tim
+        try:
+            tim = Member.objects.get(username='Tim')
+        except Member.DoesNotExist:
+            return Response(
+                {
+                    'error': 'Not found',
+                    'detail': 'User Tim not found. Please create Tim first.'
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Create 4 users in referral chain
+        users_data = [
+            {'username': 'TimRef1', 'password': 'Password123!', 'referrer': tim},
+            {'username': 'TimRef2', 'password': 'Password123!', 'referrer': None},
+            {'username': 'TimRef3', 'password': 'Password123!', 'referrer': None},
+            {'username': 'TimRef4', 'password': 'Password123!', 'referrer': None},
+        ]
+        
+        created_users = []
+        created_count = 0
+        
+        for i, user_data in enumerate(users_data):
+            # Check if user already exists
+            if Member.objects.filter(username=user_data['username']).exists():
+                user = Member.objects.get(username=user_data['username'])
+                created_users.append(user)
+                continue
+            
+            # Create user
+            user = Member.objects.create(
+                username=user_data['username'],
+                user_type='player',
+            )
+            user.set_password(user_data['password'])
+            user.save()
+            
+            created_users.append(user)
+            created_count += 1
+            
+            # Create referral chain
+            if i == 0:
+                # First user is direct referral of Tim
+                ReferralRelation.create_referral_chain(tim, user)
+            else:
+                # Each subsequent user is referral of the previous one
+                referrer = created_users[i - 1]
+                ReferralRelation.create_referral_chain(referrer, user)
+        
+        # Fund each user with 12000 rubles
+        deposit_amount = Decimal('12000.00')
+        
+        for user in created_users:
+            # Create deposit transaction
+            transaction = Transaction.objects.create(
+                member=user,
+                type='deposit',
+                amount=deposit_amount,
+                currency='rubles',
+                status='confirmed',
+                description='Test deposit for analytics',
+                confirmed_at=timezone.now()
+            )
+            
+            # Update user balance
+            user.balance_rubles += deposit_amount
+            user.save()
+        
+        # Simulate tournament participation and award bonuses
+        tim_total_bonuses = Decimal('0')
+        
+        for user in created_users:
+            # Mark first tournament as played
+            user.first_tournament_played = True
+            user.save()
+            
+            # Award bonuses to referral chain (up to 10 levels)
+            relations = ReferralRelation.objects.filter(
+                referred=user
+            ).select_related('referrer').order_by('level')
+            
+            for relation in relations:
+                if relation.level == 1:
+                    bonus_amount = relation.referrer.calculate_referral_bonus(user)
+                else:
+                    bonus_amount = relation.referrer.calculate_indirect_bonus(relation.level)
+                
+                # Create transaction for bonus
+                referrer_currency = 'vcoins' if relation.referrer.user_type == 'player' else 'rubles'
+                bonus_transaction = Transaction.objects.create(
+                    member=relation.referrer,
+                    type='bonus',
+                    amount=bonus_amount,
+                    currency=referrer_currency,
+                    status='confirmed',
+                    description=f"First tournament bonus from {user.username} (Level {relation.level})",
+                    related_member=user,
+                    confirmed_at=timezone.now()
+                )
+                
+                # Update referrer balance
+                if referrer_currency == 'vcoins':
+                    relation.referrer.balance_vcoins += bonus_amount
+                else:
+                    relation.referrer.balance_rubles += bonus_amount
+                relation.referrer.save()
+                
+                # Track Tim's bonuses
+                if relation.referrer.id == tim.id:
+                    tim_total_bonuses += bonus_amount
+        
+        # Refresh Tim from database
+        tim.refresh_from_db()
+        
+        currency_display = 'vcoins' if tim.user_type == 'player' else 'rubles'
+        balance = tim.balance_vcoins if tim.user_type == 'player' else tim.balance_rubles
+        
+        return Response(
+            {
+                'message': 'Test users seeded successfully',
+                'created_users': created_count,
+                'tim_username': tim.username,
+                'tim_referral_code': tim.referral_code,
+                'total_bonuses': float(tim_total_bonuses),
+                'tim_balance': float(balance),
+                'currency': currency_display
+            },
+            status=status.HTTP_201_CREATED
+        )
