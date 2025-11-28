@@ -1,17 +1,45 @@
-import { instance } from './axios';
+import axiosInstance from './axios';
 
-export const register = (data) => {
-  return instance.post('/api/auth/register', data);
+/**
+ * Register a new user
+ * @param {Object} data - Registration data
+ * @param {string} data.username - Username
+ * @param {string} data.password - Password
+ * @param {string} data.user_type - User type (player or influencer)
+ * @param {string} [data.referral_code] - Optional referral code
+ * @returns {Promise} Response with user data
+ */
+export const register = async (data) => {
+  const response = await axiosInstance.post('/api/auth/register', data);
+  return response;
 };
 
-export const login = (data) => {
-  return instance.post('/api/auth/login', data);
+/**
+ * Login user
+ * @param {Object} data - Login credentials
+ * @param {string} data.username - Username
+ * @param {string} data.password - Password
+ * @returns {Promise} Response with user data
+ */
+export const login = async (data) => {
+  const response = await axiosInstance.post('/api/auth/login', data);
+  return response;
 };
 
-export const logout = () => {
-  return instance.post('/api/auth/logout');
+/**
+ * Logout current user
+ * @returns {Promise} Response with logout confirmation
+ */
+export const logout = async () => {
+  const response = await axiosInstance.post('/api/auth/logout');
+  return response;
 };
 
-export const getCurrentUser = () => {
-  return instance.get('/api/auth/me');
+/**
+ * Get current authenticated user
+ * @returns {Promise} Response with current user data
+ */
+export const getCurrentUser = async () => {
+  const response = await axiosInstance.get('/api/auth/me');
+  return response;
 };
