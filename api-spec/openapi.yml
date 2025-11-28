@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Referral System API
+  version: 1.0.0
+  description: API for referral system with players and influencers
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+paths:
+  /api/auth/register:
+    $ref: './paths/auth.yml#/~1api~1auth~1register'
+  /api/auth/login:
+    $ref: './paths/auth.yml#/~1api~1auth~1login'
+  /api/auth/logout:
+    $ref: './paths/auth.yml#/~1api~1auth~1logout'
+  /api/auth/me:
+    $ref: './paths/auth.yml#/~1api~1auth~1me'
+  /api/users/profile:
+    $ref: './paths/users.yml#/~1api~1users~1profile'
+  /api/users/referral-link:
+    $ref: './paths/users.yml#/~1api~1users~1referral-link'
+
+components:
+  schemas:
+    UserType:
+      type: string
+      enum:
+        - player
+        - influencer
+      description: Type of user account
+
+    Member:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserType'
+        referral_code:
+          type: string
+          readOnly: true
+        referred_by:
+          type: integer
+          nullable: true
+          readOnly: true
+        balance:
+          type: number
+          format: float
+          readOnly: true
+          description: V-Coins for players, real money for influencers
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - user_type
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          format: password
+          minLength: 8
+        referral_code:
+          type: string
+          nullable: true
+        user_type:
+          $ref: '#/components/schemas/UserType'
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 150
+
+    ReferralLink:
+      type: object
+      properties:
+        referral_code:
+          type: string
+        referral_link:
+          type: string
+          format: uri
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

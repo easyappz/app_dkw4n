@@ -1,0 +1,90 @@
+/api/users/profile:
+  get:
+    summary: Get user profile
+    description: Retrieve current user profile information
+    tags:
+      - Users
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: User profile data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Member'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+  patch:
+    summary: Update user profile
+    description: Update current user profile information
+    tags:
+      - Users
+    isSecure: true
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/ProfileUpdateRequest'
+          example:
+            username: "new_username"
+    responses:
+      '200':
+        description: Profile successfully updated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Profile updated successfully"
+                user:
+                  $ref: '../openapi.yml#/components/schemas/Member'
+      '400':
+        description: Invalid input data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/users/referral-link:
+  get:
+    summary: Get referral link
+    description: Get user's unique referral link and code
+    tags:
+      - Users
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: Referral link information
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/ReferralLink'
+            example:
+              referral_code: "ABC123XYZ"
+              referral_link: "http://localhost:8000/register?ref=ABC123XYZ"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'

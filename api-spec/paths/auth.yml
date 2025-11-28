@@ -1,0 +1,137 @@
+/api/auth/register:
+  post:
+    summary: Register a new user
+    description: Create a new user account (player or influencer) with optional referral code
+    tags:
+      - Authentication
+    isSecure: false
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/RegisterRequest'
+          example:
+            username: "john_doe"
+            password: "securePassword123"
+            user_type: "player"
+            referral_code: "ABC123"
+    responses:
+      '201':
+        description: User successfully registered
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "User registered successfully"
+                user:
+                  $ref: '../openapi.yml#/components/schemas/Member'
+      '400':
+        description: Invalid input data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Validation error"
+              detail: "Username already exists"
+
+/api/auth/login:
+  post:
+    summary: User login
+    description: Authenticate user and create session
+    tags:
+      - Authentication
+    isSecure: false
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/LoginRequest'
+          example:
+            username: "john_doe"
+            password: "securePassword123"
+    responses:
+      '200':
+        description: Successfully authenticated
+        headers:
+          Set-Cookie:
+            schema:
+              type: string
+              example: sessionid=abc123; HttpOnly; Path=/
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Login successful"
+                user:
+                  $ref: '../openapi.yml#/components/schemas/Member'
+      '401':
+        description: Invalid credentials
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Authentication failed"
+              detail: "Invalid username or password"
+
+/api/auth/logout:
+  post:
+    summary: User logout
+    description: Destroy user session
+    tags:
+      - Authentication
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: Successfully logged out
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Logout successful"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/auth/me:
+  get:
+    summary: Get current user
+    description: Retrieve authenticated user information
+    tags:
+      - Authentication
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: Current user data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Member'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Authentication required"
+              detail: "User is not authenticated"
