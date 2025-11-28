@@ -39,9 +39,10 @@ const Dashboard = () => {
   };
 
   const handleCopyLink = async () => {
-    if (referralLink && referralLink.referral_link) {
+    if (referralLink && referralLink.referral_code) {
       try {
-        await navigator.clipboard.writeText(referralLink.referral_link);
+        const fullLink = `${window.location.origin}/register?ref=${referralLink.referral_code}`;
+        await navigator.clipboard.writeText(fullLink);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
       } catch (error) {
@@ -123,7 +124,7 @@ const Dashboard = () => {
               <input 
                 type="text" 
                 className="referral-input"
-                value={referralLink?.referral_link || ''}
+                value={referralLink?.referral_code ? `${window.location.origin}/register?ref=${referralLink.referral_code}` : ''}
                 readOnly
               />
               <button 
