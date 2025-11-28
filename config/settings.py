@@ -55,6 +55,11 @@ USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Referral system settings
+# Base URL for referral links. Set your real domain for production.
+# Examples: 'https://your-app.com', 'https://mysite.ru'
+REFERRAL_BASE_URL = 'https://easyappz.ru'
+
 # Application definition
 
 INSTALLED_APPS = [

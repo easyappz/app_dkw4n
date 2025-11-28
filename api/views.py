@@ -329,7 +329,12 @@ class ReferralLinkView(APIView):
             )
         
         member = request.user
-        base_url = request.build_absolute_uri('/').rstrip('/')
+        
+        # Use configured base URL or fallback to request
+        base_url = getattr(settings, 'REFERRAL_BASE_URL', None)
+        if not base_url:
+            base_url = request.build_absolute_uri('/').rstrip('/')
+        
         referral_link = f"{base_url}/register?ref={member.referral_code}"
         
         return Response(
