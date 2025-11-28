@@ -69,7 +69,7 @@ const Dashboard = () => {
 
   const isInfluencer = profile.user_type === 'influencer';
   const currency = isInfluencer ? '₽' : 'V-Coins';
-  const balance = isInfluencer ? profile.balance_rubles : profile.balance_vcoins;
+  const balance = isInfluencer ? (profile.balance_rubles ?? 0) : (profile.balance_vcoins ?? 0);
 
   return (
     <div className="dashboard-container" data-easytag="id1-react/src/pages/Dashboard/index.jsx">
