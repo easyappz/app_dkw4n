@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 import './App.css';
 
@@ -16,6 +16,26 @@ import Rules from './pages/Rules';
 import Admin from './pages/Admin';
 
 import { getCurrentUser, logout } from './api/auth';
+
+// Component for handling short referral links
+const ReferralRedirect = () => {
+  const { refCode } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (refCode) {
+      navigate(`/register?ref=${refCode}`, { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }, [refCode, navigate]);
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <p style={{ color: 'var(--neon-cyan)' }}>Перенаправление...</p>
+    </div>
+  );
+};
 
 function App() {
   const [user, setUser] = useState(null);
@@ -57,6 +77,7 @@ function App() {
         '/',
         '/login',
         '/register',
+        '/r/:refCode',
         '/dashboard',
         '/referrals',
         '/analytics',
@@ -84,6 +105,7 @@ function App() {
         <Routes>
           <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <Register onRegister={handleLogin} /> : <Navigate to="/dashboard" />} />
+          <Route path="/r/:refCode" element={<ReferralRedirect />} />
           
           <Route element={<Layout user={user} onLogout={handleLogout} />}>
             <Route path="/" element={<Home />} />

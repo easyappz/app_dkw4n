@@ -1,9 +1,17 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const refParam = searchParams.get('ref');
+    if (refParam) {
+      navigate(`/register?ref=${refParam}`, { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const handleRegister = () => {
     navigate('/register');
