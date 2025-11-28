@@ -40,7 +40,6 @@ const Register = ({ onRegister }) => {
     setError('');
     setLoading(true);
 
-    // Validate password length before sending to server
     if (formData.password.length < 8) {
       setError('Пароль должен содержать минимум 8 символов');
       setLoading(false);
@@ -54,7 +53,6 @@ const Register = ({ onRegister }) => {
         user_type: formData.user_type
       };
 
-      // Add referral_code only if it's not empty
       if (formData.referral_code && formData.referral_code.trim() !== '') {
         payload.referral_code = formData.referral_code.trim();
       }
@@ -70,7 +68,6 @@ const Register = ({ onRegister }) => {
       if (err.response && err.response.data) {
         const data = err.response.data;
         if (data.detail && typeof data.detail === 'object') {
-          // Handle field-specific validation errors
           const errorMessages = [];
           for (const [field, messages] of Object.entries(data.detail)) {
             if (Array.isArray(messages)) {
