@@ -100,7 +100,6 @@ class MemberRegistrationSerializer(serializers.Serializer):
     """Serializer for user registration"""
     username = serializers.CharField(max_length=150, required=True)
     password = serializers.CharField(
-        min_length=8,
         write_only=True,
         required=True,
         style={'input_type': 'password'}
@@ -119,14 +118,20 @@ class MemberRegistrationSerializer(serializers.Serializer):
     def validate_username(self, value):
         """Check if username is unique"""
         if Member.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists")
+            raise serializers.ValidationError("Имя пользователя уже существует")
+        return value
+    
+    def validate_password(self, value):
+        """Validate password length"""
+        if len(value) < 8:
+            raise serializers.ValidationError("Пароль должен содержать минимум 8 символов")
         return value
     
     def validate_referral_code(self, value):
         """Validate referral code if provided"""
         if value and value.strip():
-            if not Member.objects.filter(referral_code=value).exists():
-                raise serializers.ValidationError("Invalid referral code")
+            if not Member.objects.filter(referral_code=value.strip()).exists():
+                raise serializers.ValidationError("Неверный реферальный код")
         return value
     
     def create(self, validated_data):
@@ -141,7 +146,7 @@ class MemberRegistrationSerializer(serializers.Serializer):
         
         # Handle referral if code provided
         if referral_code and referral_code.strip():
-            referrer = Member.objects.filter(referral_code=referral_code).first()
+            referrer = Member.objects.filter(referral_code=referral_code.strip()).first()
             if referrer:
                 ReferralRelation.create_referral_chain(referrer, member)
                 
@@ -189,10 +194,10 @@ class MemberLoginSerializer(serializers.Serializer):
         try:
             member = Member.objects.get(username=username)
             if not member.check_password(password):
-                raise serializers.ValidationError("Invalid username or password")
+                raise serializers.ValidationError("Неверное имя пользователя или пароль")
             data['member'] = member
         except Member.DoesNotExist:
-            raise serializers.ValidationError("Invalid username or password")
+            raise serializers.ValidationError("Неверное имя пользователя или пароль")
         
         return data
 
