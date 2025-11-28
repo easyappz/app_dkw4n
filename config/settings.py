@@ -50,6 +50,11 @@ STATIC_ROOT = BASE_DIR / "django_static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "persistent" / "media/"
 
+# Static files directories for React build
+STATICFILES_DIRS = [
+    BASE_DIR / "react" / "build" / "static",
+]
+
 # Security settings for proxied deployment
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
@@ -104,7 +109,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "react" / "build",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
