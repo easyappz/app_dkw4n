@@ -45,6 +45,7 @@
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
   transition: all 0.3s ease;
   overflow: hidden;
+  min-width: 0;
 }
 
 .dashboard-card:hover {
@@ -61,6 +62,8 @@
 
 .card-content {
   text-align: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card-label {
@@ -69,6 +72,8 @@
   margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 2px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .balance-value {
@@ -128,6 +133,20 @@
 
 .referral-card {
   overflow: hidden;
+  min-width: 0;
+}
+
+.referral-card .card-content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.referral-card .card-label {
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .referral-code {
@@ -145,6 +164,7 @@
   gap: 10px;
   margin-top: 15px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .referral-input {
