@@ -6,6 +6,10 @@
 
 .analytics-header {
   margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .analytics-header h1 {
@@ -15,7 +19,36 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 10px;
+  margin: 0;
+}
+
+.refresh-button {
+  padding: 12px 24px;
+  background: linear-gradient(145deg, var(--neon-cyan), var(--neon-purple));
+  border: 2px solid var(--neon-cyan);
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.refresh-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+  background: linear-gradient(145deg, var(--neon-purple), var(--neon-cyan));
+}
+
+.refresh-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .analytics-grid {
@@ -221,6 +254,15 @@
 }
 
 @media (max-width: 768px) {
+  .analytics-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .refresh-button {
+    width: 100%;
+  }
+
   .analytics-grid {
     grid-template-columns: 1fr;
   }

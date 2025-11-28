@@ -6,6 +6,7 @@ const Analytics = () => {
   const [stats, setStats] = useState(null);
   const [tree, setTree] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -29,6 +30,26 @@ const Analytics = () => {
       setError('Ошибка загрузки аналитики');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+      
+      const [statsResponse, treeResponse] = await Promise.all([
+        getReferralStats(),
+        getReferralTree({ max_depth: 10 })
+      ]);
+      
+      setStats(statsResponse.data);
+      setTree(treeResponse.data);
+    } catch (err) {
+      console.error('Error refreshing analytics:', err);
+      setError('Ошибка обновления аналитики');
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -97,6 +118,13 @@ const Analytics = () => {
     <div className="analytics-page" data-easytag="id1-react/src/pages/Analytics/index.jsx">
       <div className="analytics-header">
         <h1>📊 Аналитика рефералов</h1>
+        <button 
+          className="refresh-button" 
+          onClick={handleRefresh}
+          disabled={refreshing}
+        >
+          {refreshing ? '🔄 Обновление...' : '🔄 Обновить'}
+        </button>
       </div>
 
       {/* Statistics Cards */}
