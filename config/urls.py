@@ -17,11 +17,42 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include, re_path
-from django.views.generic import TemplateView
+from django.http import HttpResponse
+from django.conf import settings
+import os
+
+
+def serve_react(request):
+    """
+    Serve React SPA index.html for all non-API routes.
+    This allows React Router to handle client-side routing.
+    """
+    try:
+        index_path = os.path.join(settings.BASE_DIR, 'react', 'build', 'index.html')
+        with open(index_path, 'r', encoding='utf-8') as f:
+            return HttpResponse(f.read(), content_type='text/html')
+    except FileNotFoundError:
+        return HttpResponse(
+            'React build not found. Please run: cd react && npm install && npm run build',
+            status=500,
+            content_type='text/plain'
+        )
+    except Exception as e:
+        return HttpResponse(
+            f'Error serving React app: {str(e)}',
+            status=500,
+            content_type='text/plain'
+        )
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
-    # Catch-all route for React SPA - must be last
-    re_path(r'^(?!api/).*$', TemplateView.as_view(template_name='index.html'), name='spa-fallback'),
+]
+
+# Catch-all route for React SPA - must be last
+# This handles all routes like /register, /login, /dashboard etc.
+# and allows React Router to handle them on the client side
+urlpatterns += [
+    re_path(r'^.*$', serve_react, name='spa-fallback'),
 ]
