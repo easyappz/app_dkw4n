@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.utils import timezone
 import uuid
 import string
 import random
@@ -192,8 +193,8 @@ class Transaction(models.Model):
     
     TYPE_CHOICES = [
         ('deposit', 'Deposit'),
-        ('bonus', 'Bonus'),
         ('withdrawal', 'Withdrawal'),
+        ('bonus', 'Bonus'),
         ('tournament', 'Tournament'),
     ]
     
@@ -204,8 +205,8 @@ class Transaction(models.Model):
     
     STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
     ]
     
     member = models.ForeignKey(
@@ -226,6 +227,7 @@ class Transaction(models.Model):
         related_name='related_transactions'
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'transactions'
@@ -239,11 +241,12 @@ class Transaction(models.Model):
         return f"{self.member.username} - {self.type} {self.amount} {self.currency}"
     
     def complete(self):
-        """Mark transaction as completed and update member balance"""
-        if self.status == 'completed':
+        """Mark transaction as confirmed and update member balance"""
+        if self.status == 'confirmed':
             return
         
-        self.status = 'completed'
+        self.status = 'confirmed'
+        self.confirmed_at = timezone.now()
         
         # Update member balance
         if self.currency == 'vcoins':

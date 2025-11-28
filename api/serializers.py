@@ -90,7 +90,7 @@ class MemberAdminSerializer(serializers.ModelSerializer):
         bonus_transactions = Transaction.objects.filter(
             member=obj,
             type='bonus',
-            status='completed'
+            status='confirmed'
         )
         total = sum(t.amount for t in bonus_transactions)
         return float(total)
@@ -160,7 +160,7 @@ class MemberRegistrationSerializer(serializers.Serializer):
                         type='bonus',
                         amount=bonus_amount,
                         currency=currency,
-                        status='completed',
+                        status='confirmed',
                         description=f"Referral bonus from {member.username} (Level {relation.level})",
                         related_member=member
                     )
@@ -221,7 +221,7 @@ class ReferralRelationSerializer(serializers.ModelSerializer):
             member=obj.referrer,
             type='bonus',
             related_member=obj.referred,
-            status='completed'
+            status='confirmed'
         )
         total = sum(t.amount for t in transactions)
         return float(total)
@@ -230,7 +230,6 @@ class ReferralRelationSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     """Serializer for Transaction model"""
     transaction_type = serializers.CharField(source='type')
-    confirmed_at = serializers.SerializerMethodField()
     
     class Meta:
         model = Transaction
@@ -244,12 +243,6 @@ class TransactionSerializer(serializers.ModelSerializer):
             'confirmed_at'
         ]
         read_only_fields = fields
-    
-    def get_confirmed_at(self, obj):
-        """Return confirmed_at timestamp"""
-        if obj.status == 'completed':
-            return obj.created_at
-        return None
 
 
 class LevelSerializer(serializers.ModelSerializer):
@@ -356,7 +349,7 @@ class ReferralTreeNodeSerializer(serializers.Serializer):
 class ManualBonusRequestSerializer(serializers.Serializer):
     """Serializer for manual bonus assignment request"""
     user_id = serializers.IntegerField(required=True)
-    amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=0.01, required=True)
+    amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0.01'), required=True)
     reason = serializers.CharField(min_length=1, required=True)
 
 
@@ -364,7 +357,7 @@ class ConfirmTournamentRequestSerializer(serializers.Serializer):
     """Serializer for tournament confirmation request"""
     user_id = serializers.IntegerField(required=True)
     tournament_name = serializers.CharField(required=True)
-    reward_amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=0, required=True)
+    reward_amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0'), required=True)
 
 
 class ConfirmDepositRequestSerializer(serializers.Serializer):

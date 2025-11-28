@@ -404,7 +404,7 @@ class ReferralStatsView(APIView):
         bonus_transactions = Transaction.objects.filter(
             member=member,
             type='bonus',
-            status='completed'
+            status='confirmed'
         )
         total_earned = sum(t.amount for t in bonus_transactions)
         
@@ -424,7 +424,7 @@ class ReferralStatsView(APIView):
                     level_transactions = Transaction.objects.filter(
                         member=member,
                         type='bonus',
-                        status='completed',
+                        status='confirmed',
                         related_member=relation.referred
                     )
                     level_earned += sum(t.amount for t in level_transactions)
@@ -557,7 +557,7 @@ class DepositView(APIView):
                     'amount': {'type': 'number'},
                     'payment_method': {'type': 'string'}
                 },
-                'required': ['amount']
+                'required': ['amount', 'payment_method']
             }
         },
         responses={201: TransactionSerializer}
@@ -727,7 +727,7 @@ class CurrentLevelView(APIView):
             except Level.DoesNotExist:
                 progress_percentage = (current_points / points_for_next_level * 100) if points_for_next_level > 0 else 0
         else:
-            points_for_next_level = current_points
+            points_for_next_level = None
             progress_percentage = 100
         
         return Response(
@@ -856,7 +856,7 @@ class AdminBonusView(APIView):
             type='bonus',
             amount=amount,
             currency=currency,
-            status='completed',
+            status='confirmed',
             description=f"Manual bonus: {reason}"
         )
         transaction.complete()
@@ -922,7 +922,7 @@ class ConfirmTournamentView(APIView):
             type='tournament',
             amount=reward_amount,
             currency=currency,
-            status='completed',
+            status='confirmed',
             description=f"Tournament reward: {tournament_name}"
         )
         transaction.complete()
@@ -950,7 +950,7 @@ class ConfirmTournamentView(APIView):
                     type='bonus',
                     amount=bonus_amount,
                     currency=referrer_currency,
-                    status='completed',
+                    status='confirmed',
                     description=f"First tournament bonus from {member.username} (Level {relation.level})",
                     related_member=member
                 )
@@ -1016,7 +1016,7 @@ class ConfirmDepositView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if transaction.status == 'completed':
+        if transaction.status == 'confirmed':
             return Response(
                 {
                     'error': 'Invalid operation',
@@ -1044,7 +1044,7 @@ class ConfirmDepositView(APIView):
                 type='bonus',
                 amount=bonus_amount,
                 currency='rubles',
-                status='completed',
+                status='confirmed',
                 description=f"10% deposit bonus from {member.username}",
                 related_member=member
             )
@@ -1085,14 +1085,14 @@ class AdminStatsView(APIView):
         # Calculate total deposits
         deposit_transactions = Transaction.objects.filter(
             type='deposit',
-            status='completed'
+            status='confirmed'
         )
         total_deposits = sum(t.amount for t in deposit_transactions)
         
         # Calculate total bonuses paid
         bonus_transactions = Transaction.objects.filter(
             type='bonus',
-            status='completed'
+            status='confirmed'
         )
         total_bonuses_paid = sum(t.amount for t in bonus_transactions)
         
