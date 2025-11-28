@@ -80,6 +80,60 @@ class Command(BaseCommand):
             
             self.stdout.write(self.style.SUCCESS(f'Funded {user.username} with {deposit_amount} rubles (balance: {user.balance_rubles})'))
         
+        # Simulate tournament participation and award bonuses
+        self.stdout.write('\n' + '=' * 60)
+        self.stdout.write(self.style.SUCCESS('PROCESSING TOURNAMENT BONUSES:'))
+        self.stdout.write('=' * 60)
+        
+        tim_total_bonuses = Decimal('0')
+        
+        for user in created_users:
+            # Mark first tournament as played
+            user.first_tournament_played = True
+            user.save()
+            
+            self.stdout.write(f'\nProcessing first tournament for {user.username}...')
+            
+            # Award bonuses to referral chain (up to 10 levels)
+            relations = ReferralRelation.objects.filter(
+                referred=user
+            ).select_related('referrer').order_by('level')
+            
+            for relation in relations:
+                if relation.level == 1:
+                    bonus_amount = relation.referrer.calculate_referral_bonus(user)
+                else:
+                    bonus_amount = relation.referrer.calculate_indirect_bonus(relation.level)
+                
+                # Create transaction for bonus
+                referrer_currency = 'vcoins' if relation.referrer.user_type == 'player' else 'rubles'
+                bonus_transaction = Transaction.objects.create(
+                    member=relation.referrer,
+                    type='bonus',
+                    amount=bonus_amount,
+                    currency=referrer_currency,
+                    status='confirmed',
+                    description=f"First tournament bonus from {user.username} (Level {relation.level})",
+                    related_member=user,
+                    confirmed_at=timezone.now()
+                )
+                
+                # Update referrer balance
+                if referrer_currency == 'vcoins':
+                    relation.referrer.balance_vcoins += bonus_amount
+                else:
+                    relation.referrer.balance_rubles += bonus_amount
+                relation.referrer.save()
+                
+                # Track Tim's bonuses
+                if relation.referrer.id == tim.id:
+                    tim_total_bonuses += bonus_amount
+                
+                self.stdout.write(
+                    f'  → Awarded {bonus_amount} {referrer_currency} to {relation.referrer.username} '
+                    f'(Level {relation.level} referral)'
+                )
+        
         # Display referral chain summary
         self.stdout.write('\n' + '=' * 60)
         self.stdout.write(self.style.SUCCESS('REFERRAL CHAIN SUMMARY:'))
@@ -91,9 +145,50 @@ class Command(BaseCommand):
             indent = '  ' * relation.level
             self.stdout.write(f'{indent}Level {relation.level}: {relation.referred.username} (balance: {relation.referred.balance_rubles} RUB)')
         
+        # Refresh Tim from database
+        tim.refresh_from_db()
+        
+        # Display Tim's bonus summary
+        self.stdout.write('\n' + '=' * 60)
+        self.stdout.write(self.style.SUCCESS('TIM\'S BONUS SUMMARY:'))
         self.stdout.write('=' * 60)
-        self.stdout.write(self.style.SUCCESS(f'\nTotal users in Tim\'s chain: {tim_chain.count()}'))
-        self.stdout.write(self.style.SUCCESS('Test data generation completed!'))
+        
+        # Count bonuses by level
+        bonus_by_level = {}
+        tim_bonus_transactions = Transaction.objects.filter(
+            member=tim,
+            type='bonus',
+            status='confirmed'
+        ).select_related('related_member')
+        
+        for bonus in tim_bonus_transactions:
+            if bonus.related_member:
+                relation = ReferralRelation.objects.filter(
+                    referrer=tim,
+                    referred=bonus.related_member
+                ).first()
+                if relation:
+                    level = relation.level
+                    if level not in bonus_by_level:
+                        bonus_by_level[level] = {'count': 0, 'amount': Decimal('0')}
+                    bonus_by_level[level]['count'] += 1
+                    bonus_by_level[level]['amount'] += bonus.amount
+        
+        for level in sorted(bonus_by_level.keys()):
+            self.stdout.write(
+                f'Level {level}: {bonus_by_level[level]["count"]} referrals, '
+                f'{bonus_by_level[level]["amount"]} {"V-Coins" if tim.user_type == "player" else "rubles"}'
+            )
+        
+        currency_display = 'V-Coins' if tim.user_type == 'player' else 'rubles'
+        balance = tim.balance_vcoins if tim.user_type == 'player' else tim.balance_rubles
+        
+        self.stdout.write('\n' + '-' * 60)
+        self.stdout.write(self.style.SUCCESS(f'Total bonuses earned by Tim: {tim_total_bonuses} {currency_display}'))
+        self.stdout.write(self.style.SUCCESS(f'Tim\'s current balance: {balance} {currency_display}'))
+        self.stdout.write(self.style.SUCCESS(f'Total users in Tim\'s chain: {tim_chain.count()}'))
+        self.stdout.write('=' * 60)
+        self.stdout.write(self.style.SUCCESS('\nTest data generation completed!'))
 
 
 # Auto-execute the command
