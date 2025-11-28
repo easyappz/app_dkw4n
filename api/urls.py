@@ -6,7 +6,15 @@ from .views import (
     LogoutView,
     MeView,
     ProfileView,
-    ReferralLinkView
+    ReferralLinkView,
+    ReferralsListView,
+    ReferralStatsView,
+    ReferralTreeView,
+    TransactionsListView,
+    DepositView,
+    BonusesListView,
+    CurrentLevelView,
+    LevelsListView
 )
 
 urlpatterns = [
@@ -21,4 +29,18 @@ urlpatterns = [
     # User endpoints
     path("users/profile", ProfileView.as_view(), name="profile"),
     path("users/referral-link", ReferralLinkView.as_view(), name="referral-link"),
+    
+    # Referral endpoints
+    path("referrals", ReferralsListView.as_view(), name="referrals-list"),
+    path("referrals/stats", ReferralStatsView.as_view(), name="referral-stats"),
+    path("referrals/tree", ReferralTreeView.as_view(), name="referral-tree"),
+    
+    # Transaction endpoints
+    path("transactions", TransactionsListView.as_view(), name="transactions-list"),
+    path("transactions/deposit", DepositView.as_view(), name="deposit"),
+    path("bonuses", BonusesListView.as_view(), name="bonuses-list"),
+    
+    # Level endpoints
+    path("levels/current", CurrentLevelView.as_view(), name="current-level"),
+    path("levels", LevelsListView.as_view(), name="levels-list"),
 ]

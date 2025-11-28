@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import make_password, check_password
 import uuid
 import string
 import random
+from decimal import Decimal
 
 
 class Member(models.Model):
@@ -96,51 +97,41 @@ class Member(models.Model):
         return chain
     
     def calculate_referral_bonus(self, direct_referral):
-        """Calculate bonus for referring a new member"""
+        """Calculate bonus for referring a new member (level 1)"""
         # Get member's level configuration
         try:
             level_config = Level.objects.get(name=self.level)
             multiplier = level_config.bonus_multiplier
         except Level.DoesNotExist:
-            multiplier = 1.0
-        
-        # Base bonus for direct referral (level 1)
-        base_bonus = 1000
+            multiplier = Decimal('1.0')
         
         if self.user_type == 'player':
+            # Players get 1000 V-Coins for level 1 referral
+            base_bonus = Decimal('1000')
             return base_bonus * multiplier
         else:  # influencer
-            # Influencers get money instead of V-Coins
-            return (base_bonus * multiplier) / 100  # Example conversion rate
+            # Influencers get 500 rubles + 10% for level 1
+            # For now, just returning base 500 rubles (10% would be calculated from deposit)
+            base_bonus = Decimal('500')
+            return base_bonus * multiplier
     
     def calculate_indirect_bonus(self, level):
-        """Calculate bonus for indirect referrals"""
-        # Bonus decreases with level
-        # Level 2: 150 V-Coins, Level 3: 100, etc.
-        base_bonuses = {
-            2: 150,
-            3: 100,
-            4: 75,
-            5: 50,
-            6: 40,
-            7: 30,
-            8: 20,
-            9: 15,
-            10: 10,
-        }
-        
+        """Calculate bonus for indirect referrals (level 2-10)"""
+        # Get member's level configuration
         try:
             level_config = Level.objects.get(name=self.level)
             multiplier = level_config.bonus_multiplier
         except Level.DoesNotExist:
-            multiplier = 1.0
-        
-        base_bonus = base_bonuses.get(level, 0)
+            multiplier = Decimal('1.0')
         
         if self.user_type == 'player':
+            # Players get 150 V-Coins for level 2+ referrals
+            base_bonus = Decimal('150')
             return base_bonus * multiplier
         else:  # influencer
-            return (base_bonus * multiplier) / 100
+            # Influencers get 75 rubles for level 2+ referrals
+            base_bonus = Decimal('75')
+            return base_bonus * multiplier
 
 
 class ReferralRelation(models.Model):
@@ -203,6 +194,7 @@ class Transaction(models.Model):
         ('deposit', 'Deposit'),
         ('bonus', 'Bonus'),
         ('withdrawal', 'Withdrawal'),
+        ('tournament', 'Tournament'),
     ]
     
     CURRENCY_CHOICES = [
