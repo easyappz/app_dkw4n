@@ -40,12 +40,6 @@ const Register = ({ onRegister }) => {
     setError('');
     setLoading(true);
 
-    if (formData.password.length < 8) {
-      setError('Пароль должен содержать минимум 8 символов');
-      setLoading(false);
-      return;
-    }
-
     try {
       const payload = {
         username: formData.username,
