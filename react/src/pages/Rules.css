@@ -1,0 +1,45 @@
+.rules-page {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.rules-content {
+  background: rgba(26, 26, 46, 0.8);
+  border: 2px solid var(--neon-cyan);
+  border-radius: 16px;
+  padding: 30px;
+  margin-top: 20px;
+}
+
+.rules-section {
+  margin-bottom: 30px;
+}
+
+.rules-section h2 {
+  color: var(--neon-magenta);
+  font-size: 24px;
+  margin-bottom: 15px;
+  text-shadow: var(--shadow-magenta);
+}
+
+.rules-section p,
+.rules-section li {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 16px;
+}
+
+.rules-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.rules-section li {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+}
+
+.rules-section li:last-child {
+  border-bottom: none;
+}

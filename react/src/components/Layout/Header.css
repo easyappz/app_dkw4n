@@ -1,0 +1,141 @@
+.header {
+  background: rgba(26, 26, 46, 0.95);
+  border-bottom: 2px solid var(--neon-cyan);
+  box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.logo-text {
+  color: var(--neon-cyan);
+  text-shadow: var(--shadow-cyan);
+}
+
+.logo-glow {
+  color: var(--neon-magenta);
+  text-shadow: var(--shadow-magenta);
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--neon-cyan);
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: var(--shadow-cyan);
+}
+
+.nav-link.admin-link {
+  color: var(--neon-yellow);
+}
+
+.nav-link.admin-link:hover {
+  background: rgba(255, 255, 0, 0.1);
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+}
+
+.btn-register {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  color: #000;
+  font-weight: bold;
+}
+
+.btn-register:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 8px 16px;
+  background: rgba(0, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid var(--neon-cyan);
+}
+
+.username {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.balance {
+  color: var(--neon-green);
+  font-weight: bold;
+  font-size: 16px;
+  text-shadow: var(--shadow-green);
+}
+
+.btn-logout {
+  padding: 8px 20px;
+  background: rgba(255, 0, 255, 0.2);
+  border: 1px solid var(--neon-magenta);
+  border-radius: 8px;
+  color: var(--neon-magenta);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 0, 255, 0.3);
+  box-shadow: var(--shadow-magenta);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .nav-menu {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .user-info {
+    padding: 6px 12px;
+  }
+}
