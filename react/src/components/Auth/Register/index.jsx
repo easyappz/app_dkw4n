@@ -40,6 +40,13 @@ const Register = ({ onRegister }) => {
     setError('');
     setLoading(true);
 
+    // Validate password length before sending to server
+    if (formData.password.length < 8) {
+      setError('Пароль должен содержать минимум 8 символов');
+      setLoading(false);
+      return;
+    }
+
     try {
       const payload = {
         username: formData.username,
@@ -61,7 +68,21 @@ const Register = ({ onRegister }) => {
     } catch (err) {
       console.error('Registration error:', err);
       if (err.response && err.response.data) {
-        setError(err.response.data.error || err.response.data.detail || 'Ошибка регистрации');
+        const data = err.response.data;
+        if (data.detail && typeof data.detail === 'object') {
+          // Handle field-specific validation errors
+          const errorMessages = [];
+          for (const [field, messages] of Object.entries(data.detail)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(...messages);
+            } else {
+              errorMessages.push(messages);
+            }
+          }
+          setError(errorMessages.join('. '));
+        } else {
+          setError(data.error || data.detail || 'Ошибка регистрации');
+        }
       } else {
         setError('Не удалось зарегистрироваться. Попробуйте снова.');
       }
@@ -119,6 +140,7 @@ const Register = ({ onRegister }) => {
                 required
                 autoComplete="new-password"
               />
+              <p className="form-hint">Минимум 8 символов</p>
             </div>
 
             <div className="form-group">

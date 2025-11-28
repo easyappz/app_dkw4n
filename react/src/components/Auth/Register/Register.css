@@ -107,6 +107,13 @@
   color: #ffffff;
 }
 
+.form-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #8899aa;
+  font-style: italic;
+}
+
 .user-type-info {
   background: rgba(0, 255, 255, 0.1);
   border: 1px solid rgba(0, 255, 255, 0.3);
