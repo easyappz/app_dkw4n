@@ -1,0 +1,171 @@
+/api/transactions:
+  get:
+    summary: Get transaction history
+    description: Retrieve paginated list of user's transactions
+    tags:
+      - Transactions
+    isSecure: true
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+        description: Page number
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+        description: Number of items per page
+      - name: transaction_type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+            - deposit
+            - withdrawal
+            - bonus
+            - tournament
+        description: Filter by transaction type
+    responses:
+      '200':
+        description: Paginated list of transactions
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 100
+                next:
+                  type: string
+                  nullable: true
+                  example: "http://localhost:8000/api/transactions?page=2"
+                previous:
+                  type: string
+                  nullable: true
+                  example: null
+                results:
+                  type: array
+                  items:
+                    $ref: '../openapi.yml#/components/schemas/Transaction'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/transactions/deposit:
+  post:
+    summary: Create deposit request
+    description: Create a new deposit request for the user
+    tags:
+      - Transactions
+    isSecure: true
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/DepositRequest'
+          example:
+            amount: 1000
+            payment_method: "card"
+    responses:
+      '201':
+        description: Deposit request created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Deposit request created successfully"
+                transaction:
+                  $ref: '../openapi.yml#/components/schemas/Transaction'
+      '400':
+        description: Invalid input data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Validation error"
+              detail: "Amount must be greater than 0"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/bonuses:
+  get:
+    summary: Get bonus history
+    description: Retrieve paginated list of user's bonuses from referrals
+    tags:
+      - Transactions
+    isSecure: true
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+        description: Page number
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+        description: Number of items per page
+    responses:
+      '200':
+        description: Paginated list of bonuses
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 30
+                next:
+                  type: string
+                  nullable: true
+                  example: "http://localhost:8000/api/bonuses?page=2"
+                previous:
+                  type: string
+                  nullable: true
+                  example: null
+                results:
+                  type: array
+                  items:
+                    $ref: '../openapi.yml#/components/schemas/Bonus'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'

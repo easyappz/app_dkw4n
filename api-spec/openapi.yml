@@ -21,6 +21,32 @@ paths:
     $ref: './paths/users.yml#/~1api~1users~1profile'
   /api/users/referral-link:
     $ref: './paths/users.yml#/~1api~1users~1referral-link'
+  /api/referrals:
+    $ref: './paths/referrals.yml#/~1api~1referrals'
+  /api/referrals/stats:
+    $ref: './paths/referrals.yml#/~1api~1referrals~1stats'
+  /api/referrals/tree:
+    $ref: './paths/referrals.yml#/~1api~1referrals~1tree'
+  /api/transactions:
+    $ref: './paths/transactions.yml#/~1api~1transactions'
+  /api/transactions/deposit:
+    $ref: './paths/transactions.yml#/~1api~1transactions~1deposit'
+  /api/bonuses:
+    $ref: './paths/transactions.yml#/~1api~1bonuses'
+  /api/levels/current:
+    $ref: './paths/levels.yml#/~1api~1levels~1current'
+  /api/levels:
+    $ref: './paths/levels.yml#/~1api~1levels'
+  /api/admin/users:
+    $ref: './paths/admin.yml#/~1api~1admin~1users'
+  /api/admin/bonuses:
+    $ref: './paths/admin.yml#/~1api~1admin~1bonuses'
+  /api/admin/confirm-tournament:
+    $ref: './paths/admin.yml#/~1api~1admin~1confirm-tournament'
+  /api/admin/confirm-deposit:
+    $ref: './paths/admin.yml#/~1api~1admin~1confirm-deposit'
+  /api/admin/stats:
+    $ref: './paths/admin.yml#/~1api~1admin~1stats'
 
 components:
   schemas:
@@ -30,6 +56,23 @@ components:
         - player
         - influencer
       description: Type of user account
+
+    TransactionType:
+      type: string
+      enum:
+        - deposit
+        - withdrawal
+        - bonus
+        - tournament
+      description: Type of transaction
+
+    TransactionStatus:
+      type: string
+      enum:
+        - pending
+        - confirmed
+        - cancelled
+      description: Status of transaction
 
     Member:
       type: object
@@ -54,10 +97,27 @@ components:
           format: float
           readOnly: true
           description: V-Coins for players, real money for influencers
+        is_admin:
+          type: boolean
+          readOnly: true
+          default: false
         created_at:
           type: string
           format: date-time
           readOnly: true
+
+    MemberAdmin:
+      allOf:
+        - $ref: '#/components/schemas/Member'
+        - type: object
+          properties:
+            total_referrals:
+              type: integer
+              readOnly: true
+            total_earned:
+              type: number
+              format: float
+              readOnly: true
 
     RegisterRequest:
       type: object
@@ -106,6 +166,241 @@ components:
         referral_link:
           type: string
           format: uri
+
+    Referral:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+        user_type:
+          $ref: '#/components/schemas/UserType'
+        level:
+          type: integer
+          description: Referral level (1 for direct referral)
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        total_earned_from:
+          type: number
+          format: float
+          readOnly: true
+          description: Total earned from this referral
+
+    ReferralStats:
+      type: object
+      properties:
+        total_referrals:
+          type: integer
+          description: Total number of referrals across all levels
+        direct_referrals:
+          type: integer
+          description: Number of direct (level 1) referrals
+        total_earned:
+          type: number
+          format: float
+          description: Total amount earned from all referrals
+        level_breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                type: integer
+              count:
+                type: integer
+              earned:
+                type: number
+                format: float
+
+    ReferralTreeNode:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        user_type:
+          $ref: '#/components/schemas/UserType'
+        level:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferralTreeNode'
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionType'
+        amount:
+          type: number
+          format: float
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+
+    DepositRequest:
+      type: object
+      required:
+        - amount
+        - payment_method
+      properties:
+        amount:
+          type: number
+          format: float
+          minimum: 0.01
+        payment_method:
+          type: string
+          description: Payment method identifier
+
+    Bonus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        amount:
+          type: number
+          format: float
+        referral_id:
+          type: integer
+          description: ID of the referral that generated this bonus
+        referral_username:
+          type: string
+          readOnly: true
+        referral_level:
+          type: integer
+          description: Level of the referral (1-10)
+        reason:
+          type: string
+          description: Reason for the bonus
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Level:
+      type: object
+      properties:
+        level:
+          type: integer
+        name:
+          type: string
+        points_required:
+          type: integer
+          description: Points required to reach this level
+        benefits:
+          type: array
+          items:
+            type: string
+          description: List of benefits at this level
+
+    UserLevel:
+      type: object
+      properties:
+        current_level:
+          type: integer
+        level_name:
+          type: string
+        current_points:
+          type: integer
+        points_for_next_level:
+          type: integer
+          nullable: true
+          description: Points needed for next level, null if max level
+        progress_percentage:
+          type: number
+          format: float
+          description: Progress to next level in percentage
+        benefits:
+          type: array
+          items:
+            type: string
+
+    ManualBonusRequest:
+      type: object
+      required:
+        - user_id
+        - amount
+        - reason
+      properties:
+        user_id:
+          type: integer
+        amount:
+          type: number
+          format: float
+          minimum: 0.01
+        reason:
+          type: string
+          minLength: 1
+
+    ConfirmTournamentRequest:
+      type: object
+      required:
+        - user_id
+        - tournament_name
+        - reward_amount
+      properties:
+        user_id:
+          type: integer
+        tournament_name:
+          type: string
+        reward_amount:
+          type: number
+          format: float
+          minimum: 0
+
+    ConfirmDepositRequest:
+      type: object
+      required:
+        - transaction_id
+      properties:
+        transaction_id:
+          type: integer
+
+    SystemStats:
+      type: object
+      properties:
+        total_users:
+          type: integer
+        total_players:
+          type: integer
+        total_influencers:
+          type: integer
+        total_transactions:
+          type: integer
+        total_deposits:
+          type: number
+          format: float
+        total_bonuses_paid:
+          type: number
+          format: float
+        pending_deposits:
+          type: integer
+        active_users_last_30_days:
+          type: integer
 
     Error:
       type: object

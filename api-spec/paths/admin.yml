@@ -1,0 +1,293 @@
+/api/admin/users:
+  get:
+    summary: Get all users (Admin only)
+    description: Retrieve paginated list of all users in the system
+    tags:
+      - Admin
+    isSecure: true
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+        description: Page number
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+        description: Number of items per page
+      - name: user_type
+        in: query
+        required: false
+        schema:
+          $ref: '../openapi.yml#/components/schemas/UserType'
+        description: Filter by user type
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Search by username
+    responses:
+      '200':
+        description: Paginated list of users
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 500
+                next:
+                  type: string
+                  nullable: true
+                  example: "http://localhost:8000/api/admin/users?page=2"
+                previous:
+                  type: string
+                  nullable: true
+                  example: null
+                results:
+                  type: array
+                  items:
+                    $ref: '../openapi.yml#/components/schemas/MemberAdmin'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '403':
+        description: Not authorized (admin required)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Permission denied"
+              detail: "Admin access required"
+
+/api/admin/bonuses:
+  post:
+    summary: Manual bonus assignment (Admin only)
+    description: Manually assign bonus to a user
+    tags:
+      - Admin
+    isSecure: true
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/ManualBonusRequest'
+          example:
+            user_id: 5
+            amount: 5000
+            reason: "Special promotion reward"
+    responses:
+      '201':
+        description: Bonus assigned successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Bonus assigned successfully"
+                bonus:
+                  $ref: '../openapi.yml#/components/schemas/Bonus'
+      '400':
+        description: Invalid input data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '403':
+        description: Not authorized (admin required)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Not found"
+              detail: "User with id 5 not found"
+
+/api/admin/confirm-tournament:
+  post:
+    summary: Confirm tournament participation (Admin only)
+    description: Confirm and reward user for tournament participation
+    tags:
+      - Admin
+    isSecure: true
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/ConfirmTournamentRequest'
+          example:
+            user_id: 10
+            tournament_name: "Monthly Championship"
+            reward_amount: 10000
+    responses:
+      '201':
+        description: Tournament confirmed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Tournament confirmed successfully"
+                transaction:
+                  $ref: '../openapi.yml#/components/schemas/Transaction'
+      '400':
+        description: Invalid input data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '403':
+        description: Not authorized (admin required)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/admin/confirm-deposit:
+  post:
+    summary: Confirm deposit (Admin only)
+    description: Confirm pending deposit and credit user account
+    tags:
+      - Admin
+    isSecure: true
+    security:
+      - cookieAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yml#/components/schemas/ConfirmDepositRequest'
+          example:
+            transaction_id: 42
+    responses:
+      '200':
+        description: Deposit confirmed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Deposit confirmed successfully"
+                transaction:
+                  $ref: '../openapi.yml#/components/schemas/Transaction'
+      '400':
+        description: Invalid input data or deposit already confirmed
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Invalid operation"
+              detail: "Deposit already confirmed"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '403':
+        description: Not authorized (admin required)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '404':
+        description: Transaction not found
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+            example:
+              error: "Not found"
+              detail: "Transaction with id 42 not found"
+
+/api/admin/stats:
+  get:
+    summary: Get system statistics (Admin only)
+    description: Retrieve overall system statistics and metrics
+    tags:
+      - Admin
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: System statistics
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/SystemStats'
+            example:
+              total_users: 1250
+              total_players: 1100
+              total_influencers: 150
+              total_transactions: 5430
+              total_deposits: 250000
+              total_bonuses_paid: 175000
+              pending_deposits: 15
+              active_users_last_30_days: 850
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '403':
+        description: Not authorized (admin required)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'

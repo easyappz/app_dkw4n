@@ -1,0 +1,73 @@
+/api/levels/current:
+  get:
+    summary: Get current level and progress
+    description: Retrieve current user level information and progress to next level
+    tags:
+      - Levels
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: Current level and progress data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/UserLevel'
+            example:
+              current_level: 3
+              level_name: "Silver"
+              current_points: 1500
+              points_for_next_level: 2000
+              progress_percentage: 75
+              benefits:
+                - "5% bonus on referrals"
+                - "Access to special tournaments"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/levels:
+  get:
+    summary: Get all levels
+    description: Retrieve list of all available levels and their requirements
+    tags:
+      - Levels
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: List of all levels
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../openapi.yml#/components/schemas/Level'
+            example:
+              - level: 1
+                name: "Bronze"
+                points_required: 0
+                benefits:
+                  - "Basic referral bonuses"
+              - level: 2
+                name: "Silver"
+                points_required: 500
+                benefits:
+                  - "3% bonus on referrals"
+              - level: 3
+                name: "Gold"
+                points_required: 2000
+                benefits:
+                  - "5% bonus on referrals"
+                  - "Access to special tournaments"
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'

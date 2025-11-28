@@ -1,0 +1,138 @@
+/api/referrals:
+  get:
+    summary: Get referrals list
+    description: Retrieve paginated list of user's direct referrals
+    tags:
+      - Referrals
+    isSecure: true
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+        description: Page number
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+        description: Number of items per page
+    responses:
+      '200':
+        description: Paginated list of referrals
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 50
+                next:
+                  type: string
+                  nullable: true
+                  example: "http://localhost:8000/api/referrals?page=2"
+                previous:
+                  type: string
+                  nullable: true
+                  example: null
+                results:
+                  type: array
+                  items:
+                    $ref: '../openapi.yml#/components/schemas/Referral'
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/referrals/stats:
+  get:
+    summary: Get referral statistics
+    description: Retrieve statistics about user's referrals and earnings
+    tags:
+      - Referrals
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '200':
+        description: Referral statistics
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/ReferralStats'
+            example:
+              total_referrals: 25
+              direct_referrals: 10
+              total_earned: 15000
+              level_breakdown:
+                - level: 1
+                  count: 10
+                  earned: 10000
+                - level: 2
+                  count: 15
+                  earned: 2250
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/referrals/tree:
+  get:
+    summary: Get referral tree
+    description: Retrieve hierarchical tree of referrals up to 10 levels deep
+    tags:
+      - Referrals
+    isSecure: true
+    security:
+      - cookieAuth: []
+    parameters:
+      - name: max_depth
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 10
+        description: Maximum depth of referral tree
+    responses:
+      '200':
+        description: Referral tree structure
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../openapi.yml#/components/schemas/ReferralTreeNode'
+            example:
+              - id: 2
+                username: "user1"
+                user_type: "player"
+                level: 1
+                created_at: "2024-01-15T10:00:00Z"
+                children:
+                  - id: 3
+                    username: "user2"
+                    user_type: "player"
+                    level: 2
+                    created_at: "2024-01-16T12:00:00Z"
+                    children: []
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
