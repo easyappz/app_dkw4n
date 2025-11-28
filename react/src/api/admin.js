@@ -59,3 +59,12 @@ export const getStats = async () => {
   const response = await instance.get('/api/admin/stats');
   return response;
 };
+
+/**
+ * Seed test users (Admin only)
+ * @returns {Promise} Response with created users count
+ */
+export const seedTestUsers = async () => {
+  const response = await instance.post('/api/admin/seed-test-users');
+  return response;
+};

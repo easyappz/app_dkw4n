@@ -12,6 +12,18 @@ const Deposit = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [message, setMessage] = useState(null);
 
+  const paymentSystems = [
+    { id: 'card', name: 'Банковская карта', icon: '💳', description: 'Visa, MasterCard, МИР' },
+    { id: 'crypto_btc', name: 'Bitcoin', icon: '₿', description: 'Криптовалюта' },
+    { id: 'crypto_eth', name: 'Ethereum', icon: 'Ξ', description: 'Криптовалюта' },
+    { id: 'crypto_usdt', name: 'USDT', icon: '₮', description: 'Tether' },
+    { id: 'yoomoney', name: 'ЮMoney', icon: '💰', description: 'Электронный кошелек' },
+    { id: 'qiwi', name: 'QIWI', icon: '🥝', description: 'Электронный кошелек' },
+    { id: 'webmoney', name: 'WebMoney', icon: '💼', description: 'Электронный кошелек' },
+    { id: 'sbp', name: 'СБП', icon: '⚡', description: 'Система быстрых платежей' },
+    { id: 'transfer', name: 'Банковский перевод', icon: '🏦', description: 'Безопасный перевод' }
+  ];
+
   useEffect(() => {
     loadUserData();
     loadDepositHistory();
@@ -65,7 +77,6 @@ const Deposit = () => {
       });
       setAmount('');
       
-      // Reload history
       await loadDepositHistory();
     } catch (err) {
       console.error('Error creating deposit:', err);
@@ -118,7 +129,6 @@ const Deposit = () => {
       </div>
 
       <div className="deposit-content">
-        {/* Deposit Form */}
         <div className="deposit-form-section">
           <h2 className="section-title">Создать заявку на пополнение</h2>
           
@@ -139,17 +149,22 @@ const Deposit = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="paymentMethod">Способ оплаты:</label>
-              <select
-                id="paymentMethod"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="form-select"
-              >
-                <option value="card">Банковская карта</option>
-                <option value="crypto">Криптовалюта</option>
-                <option value="transfer">Банковский перевод</option>
-              </select>
+              <label>Выберите способ оплаты:</label>
+              <div className="payment-methods-grid">
+                {paymentSystems.map((system) => (
+                  <div
+                    key={system.id}
+                    className={`payment-card ${paymentMethod === system.id ? 'selected' : ''}`}
+                    onClick={() => setPaymentMethod(system.id)}
+                  >
+                    <div className="payment-icon">{system.icon}</div>
+                    <div className="payment-info">
+                      <div className="payment-name">{system.name}</div>
+                      <div className="payment-description">{system.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {message && (
@@ -163,7 +178,6 @@ const Deposit = () => {
             </button>
           </form>
 
-          {/* Payment Instructions */}
           <div className="payment-instructions">
             <h3>📋 Инструкция по оплате:</h3>
             <ol>
@@ -176,7 +190,6 @@ const Deposit = () => {
           </div>
         </div>
 
-        {/* Withdrawal Section for Influencers */}
         {isInfluencer && (
           <div className="withdrawal-section">
             <h2 className="section-title">💸 Вывод средств</h2>
@@ -190,7 +203,6 @@ const Deposit = () => {
         )}
       </div>
 
-      {/* Deposit History */}
       <div className="deposit-history-section">
         <h2 className="section-title">📜 История пополнений</h2>
         

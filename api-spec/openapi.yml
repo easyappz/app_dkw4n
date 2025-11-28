@@ -47,6 +47,8 @@ paths:
     $ref: './paths/admin.yml#/~1api~1admin~1confirm-deposit'
   /api/admin/stats:
     $ref: './paths/admin.yml#/~1api~1admin~1stats'
+  /api/admin/seed-test-users:
+    $ref: './paths/admin.yml#/~1api~1admin~1seed-test-users'
 
 components:
   schemas:

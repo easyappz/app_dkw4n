@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUsers, addBonus, confirmTournament, confirmDeposit, getStats } from '../../api/admin';
+import { getUsers, addBonus, confirmTournament, confirmDeposit, getStats, seedTestUsers } from '../../api/admin';
 import './Admin.css';
 
 const Admin = () => {
@@ -8,6 +8,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [seedLoading, setSeedLoading] = useState(false);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,6 +75,23 @@ const Admin = () => {
       setError(err.response?.data?.detail || 'Ошибка загрузки пользователей');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeedTestUsers = async () => {
+    setSeedLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const response = await seedTestUsers();
+      setSuccess(response.data.message || 'Тестовые пользователи успешно созданы!');
+      loadStats();
+      loadUsers();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка создания тестовых пользователей');
+    } finally {
+      setSeedLoading(false);
     }
   };
 
@@ -206,6 +224,21 @@ const Admin = () => {
 
         {/* Admin Actions */}
         <div className="admin-actions">
+          {/* Seed Test Users */}
+          <div className="action-card">
+            <h3>🧪 Создать тестовых пользователей</h3>
+            <p className="action-description">
+              Создать 4 тестовых игрока-реферала для инфлюенсера Tim с симуляцией активности
+            </p>
+            <button 
+              onClick={handleSeedTestUsers} 
+              disabled={seedLoading}
+              className="btn-submit btn-seed"
+            >
+              {seedLoading ? 'Создание...' : 'Создать тестовых пользователей'}
+            </button>
+          </div>
+
           {/* Manual Bonus Form */}
           <div className="action-card">
             <h3>💎 Начислить бонус</h3>

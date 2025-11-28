@@ -291,3 +291,39 @@
           application/json:
             schema:
               $ref: '../openapi.yml#/components/schemas/Error'
+
+/api/admin/seed-test-users:
+  post:
+    summary: Seed test users (Admin only)
+    description: Create test users and referral relationships for testing purposes
+    tags:
+      - Admin
+    isSecure: true
+    security:
+      - cookieAuth: []
+    responses:
+      '201':
+        description: Test users created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Test users seeded successfully"
+                created_users:
+                  type: integer
+                  example: 4
+      '401':
+        description: Not authenticated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'
+      '403':
+        description: Not authorized (admin required)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yml#/components/schemas/Error'

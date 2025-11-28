@@ -98,6 +98,13 @@
   gap: 10px;
 }
 
+.action-description {
+  color: #8b92b8;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -158,6 +165,14 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+.btn-seed {
+  background: linear-gradient(135deg, #00f5ff 0%, #8b5cf6 100%);
+}
+
+.btn-seed:hover {
+  box-shadow: 0 10px 30px rgba(0, 245, 255, 0.4);
 }
 
 /* Users Table */
